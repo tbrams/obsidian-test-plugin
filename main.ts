@@ -17,7 +17,7 @@ export default class MyPlugin extends Plugin {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
+		const ribbonIconEl = this.addRibbonIcon('bird', 'Sample Plugin', (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
 			new Notice('This is a notice!');
 		});
@@ -26,8 +26,20 @@ export default class MyPlugin extends Plugin {
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
+		statusBarItemEl.createEl("span", { text: "🍎" });
+		statusBarItemEl.createEl("span", { text: "🍌" });
+		statusBarItemEl.createEl("span", { text: "🥦" });
+		statusBarItemEl.createEl("span", { text: "🥬" });
 
+		// Check outpout in the console when using this command
+		this.addCommand({
+			id: "print-greeting-to-console",
+			name: "Sample Plugin: Print greeting to console",
+			callback: () => {
+				console.log("Hey, you!");
+			}
+		});
+	
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
 			id: 'open-sample-modal-simple',
@@ -36,6 +48,7 @@ export default class MyPlugin extends Plugin {
 				new SampleModal(this.app).open();
 			}
 		});
+
 		// This adds an editor command that can perform some operation on the current editor instance
 		this.addCommand({
 			id: 'sample-editor-command',
@@ -45,6 +58,7 @@ export default class MyPlugin extends Plugin {
 				editor.replaceSelection('Sample Editor Command');
 			}
 		});
+
 		// This adds a complex command that can check whether the current state of the app allows execution of the command
 		this.addCommand({
 			id: 'open-sample-modal-complex',
@@ -65,6 +79,56 @@ export default class MyPlugin extends Plugin {
 			}
 		});
 
+
+		// Add a print command to the file menu and the editor menu
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu, file) => {
+			  menu.addItem((item) => {
+				item
+				  .setTitle("Print file path 👈")
+				  .setIcon("document")
+				  .onClick(async () => {
+					new Notice(file.path);
+				  });
+			  });
+			})
+		  );
+	  
+		this.registerEvent(
+			this.app.workspace.on("editor-menu", (menu, editor, view) => {
+			  menu.addItem((item) => {
+				item
+				  .setTitle("Print file path 👈")
+				  .setIcon("document")
+				  .onClick(async () => {
+					if (view.file != null) 
+						new Notice(view.file.path);
+				  });
+			  });
+			})
+		  );
+
+
+		  // markdown post processor - csv data -> html table
+		  this.registerMarkdownCodeBlockProcessor("csv", (source, el, ctx) => {
+			const rows = source.split("\n").filter((row) => row.length > 0);
+	  
+			const table = el.createEl("table");
+			const body = table.createEl("tbody");
+	  
+			for (let i = 0; i < rows.length; i++) {
+			  const cols = rows[i].split(",");
+	  
+			  const row = body.createEl("tr");
+	  
+			  for (let j = 0; j < cols.length; j++) {
+				row.createEl("td", { text: cols[j] });
+			  }
+			}
+		  });
+
+
+
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SampleSettingTab(this.app, this));
 
@@ -76,10 +140,15 @@ export default class MyPlugin extends Plugin {
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+
+		// log when a new file is created in the console
+		this.registerEvent(this.app.vault.on('create', () => {
+			console.log('a new file has entered the arena')
+		  }));
 	}
 
 	onunload() {
-
+      console.log("sample-plugin unloaded");
 	}
 
 	async loadSettings() {
